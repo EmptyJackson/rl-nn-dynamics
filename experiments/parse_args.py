@@ -83,6 +83,9 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--sac_target_entropy", type=float, default=-1.0, help="Target entropy"
     )
 
+    # Dormancy
+    parser.add_argument("--tau", type=float, default=0.1, help="Dormancy threshold")
+
     # Logging
     parser.add_argument("--log", action="store_true")
     parser.add_argument("--wandb_project", type=str, help="Wandb project")

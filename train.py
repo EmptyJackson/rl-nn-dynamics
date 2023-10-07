@@ -5,13 +5,15 @@ from experiments.parse_args import parse_args
 from experiments.logging import init_logger, log_results
 from util import *
 from agents.agents import get_agent
-from environments.rollout import RolloutWrapper
+from analysis.activations import dormancy_rate
+from environments.rollout import RolloutWrapper, LogActivationsWrapper
 
 
 def make_train(args):
     def train(rng):
         # --- Initialize environment ---
-        env = RolloutWrapper(args.env_name, args.num_rollout_steps)
+        # env = RolloutWrapper(args.env_name, args.num_rollout_steps)
+        env = LogActivationsWrapper(args.env_name, args.num_rollout_steps)
         env_params = env.default_env_params
         rng, _rng = jax.random.split(rng)
         _rng = jax.random.split(_rng, args.num_env_workers)
@@ -39,12 +41,16 @@ def make_train(args):
             new_env_state, new_last_obs, traj_batch = env.batch_rollout(
                 _rng, train_state, env_params, last_obs, env_state
             )
+            dormancy = dormancy_rate(
+                traj_batch.info["intermediate_activations"], tau=args.tau
+            )
 
             # --- Update agent ---
             rng, _rng = jax.random.split(rng)
             train_state, aux_train_states, loss, metric = agent_train_step_fn(
                 train_state, aux_train_states, traj_batch, new_last_obs, _rng
             )
+            metric["dormancy"] = dormancy
 
             runner_state = (
                 train_state,

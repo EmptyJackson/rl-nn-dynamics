@@ -30,7 +30,6 @@ def log_results(args, results):
         rets[:, step].mean() for step in range(all_done_step, num_train_steps)
     ]
 
-    print("Step returns:", jnp.around(jnp.array(return_list), decimals=2))
     if args.log:
         for step in range(rets.shape[1]):
             step_ret = None
@@ -41,5 +40,14 @@ def log_results(args, results):
                     "return": step_ret,
                     "step": step,
                     **{k: v[:, step].mean() for k, v in results["loss"].items()},
+                    # Log dormancy for first agent
+                    "dormancy": {
+                        **{
+                            k: v[0][:, step].mean()
+                            for k, v in results["metrics"]["dormancy"].items()
+                        },
+                    },
                 }
             )
+    else:
+        print("Step returns:", jnp.around(jnp.array(return_list), decimals=2))

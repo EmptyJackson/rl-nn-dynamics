@@ -147,3 +147,49 @@ class RolloutWrapper:
             self.env.action_space(self.default_env_params).low,
             self.env.action_space(self.default_env_params).high,
         )
+
+
+class LogActivationsWrapper(RolloutWrapper):
+    def __init__(self, env_name, num_env_steps=None, env_kwargs={}):
+        super().__init__(env_name, num_env_steps, env_kwargs)
+
+    def single_rollout(
+        self, rng_episode, agent_state, env_params, init_obs, init_state
+    ):
+        """Rollout an agent on a single environment."""
+
+        def _env_step(runner_state, _):
+            train_state, env_state, last_obs, rng = runner_state
+            rng, _rng = jax.random.split(rng)
+            (pi, value), inter_vals = agent_state.apply_fn(
+                agent_state.params, last_obs, capture_intermediates=True
+            )
+            inter_vals = inter_vals["intermediates"]
+            action = pi.sample(seed=_rng)
+            log_prob = pi.log_prob(action)
+            rng, _rng = jax.random.split(rng)
+            obsv, env_state, reward, done, info = self.env.step(
+                _rng, env_state, action, env_params
+            )
+            info["intermediate_activations"] = inter_vals
+            transition = Transition(
+                done, action, value, reward, log_prob, last_obs, obsv, info
+            )
+            runner_state = (train_state, env_state, obsv, rng)
+            return runner_state, transition
+
+        # Scan over episode step loop
+        carry_out, scan_out = jax.lax.scan(
+            _env_step,
+            (
+                agent_state,
+                init_state,
+                init_obs,
+                rng_episode,
+            ),
+            None,
+            self.num_env_steps,
+        )
+        end_state = carry_out[1]
+        end_obs = carry_out[2]
+        return end_state, end_obs, scan_out
