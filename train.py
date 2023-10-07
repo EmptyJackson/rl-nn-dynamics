@@ -44,6 +44,8 @@ def make_train(args):
             dormancy = dormancy_rate(
                 traj_batch.info["intermediate_activations"], tau=args.tau
             )
+            # Remove activations for memory
+            traj_batch.info.pop("intermediate_activations")
 
             # --- Update agent ---
             rng, _rng = jax.random.split(rng)
