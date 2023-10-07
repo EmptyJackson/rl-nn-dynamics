@@ -88,7 +88,9 @@ def parse_args(cmd_args=sys.argv[1:]):
 
     # Logging
     parser.add_argument("--log", action="store_true")
-    parser.add_argument("--wandb_project", type=str, help="Wandb project")
+    parser.add_argument(
+        "--wandb_project", type=str, default="rl-nn-dynamics", help="Wandb project"
+    )
     parser.add_argument("--wandb_entity", type=str, help="Wandb entity")
     parser.add_argument("--wandb_group", type=str, default="debug", help="Wandb group")
 

@@ -7,6 +7,7 @@ from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper, Gymnax
 from gymnax.environments import spaces
 
 from util import Transition
+from analysis.activations import dormancy_rate
 
 
 def get_env(env_name: str, env_kwargs: dict):
@@ -149,8 +150,9 @@ class RolloutWrapper:
         )
 
 
-class LogActivationsWrapper(RolloutWrapper):
-    def __init__(self, env_name, num_env_steps=None, env_kwargs={}):
+class LogDormancyWrapper(RolloutWrapper):
+    def __init__(self, env_name, num_env_steps=None, env_kwargs={}, tau=0.0):
+        self.tau = tau
         super().__init__(env_name, num_env_steps, env_kwargs)
 
     def single_rollout(
@@ -171,7 +173,7 @@ class LogActivationsWrapper(RolloutWrapper):
             obsv, env_state, reward, done, info = self.env.step(
                 _rng, env_state, action, env_params
             )
-            info["intermediate_activations"] = inter_vals
+            info["dormancy"] = dormancy_rate(inter_vals, tau=self.tau)
             transition = Transition(
                 done, action, value, reward, log_prob, last_obs, obsv, info
             )
