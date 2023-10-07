@@ -46,6 +46,7 @@ def make_train(args):
             train_state, aux_train_states, loss, metric = agent_train_step_fn(
                 train_state, aux_train_states, traj_batch, new_last_obs, _rng
             )
+            metric = jax.tree_map(jnp.mean, metric)
             metric["dormancy"] = dormancy
 
             runner_state = (

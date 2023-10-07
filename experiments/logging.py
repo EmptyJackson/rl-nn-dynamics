@@ -19,6 +19,8 @@ def log_results(args, results):
     # Hack to avoid logging 0 before first episodes are done
     # Required until https://github.com/RobertTLange/gymnax/issues/62 is resolved
     returned = results["metrics"]["returned_episode"]
+    num_agents, num_train_steps = returned.shape
+    """ REMOVED, MEAN TAKEN
     num_agents, num_train_steps, num_env_workers, num_rollout_steps = returned.shape
     first_episode_done = jnp.zeros((num_agents, num_env_workers), dtype=jnp.bool_)
     all_done_step = 0
@@ -26,6 +28,8 @@ def log_results(args, results):
         step_episodes_done = jnp.any(returned[:, all_done_step], axis=-1)
         first_episode_done |= step_episodes_done
         all_done_step += 1
+    """
+    all_done_step = 0
     return_list = [
         rets[:, step].mean() for step in range(all_done_step, num_train_steps)
     ]
