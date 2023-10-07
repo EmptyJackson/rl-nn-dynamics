@@ -37,7 +37,7 @@ def make_train(args):
             # --- Collect trajectories ---
             rng, _rng = jax.random.split(rng)
             _rng = jax.random.split(_rng, args.num_env_workers)
-            new_env_state, new_last_obs, traj_batch = env.batch_rollout(
+            new_env_state, new_last_obs, traj_batch, dormancy = env.batch_rollout(
                 _rng, train_state, env_params, last_obs, env_state
             )
 
@@ -46,7 +46,7 @@ def make_train(args):
             train_state, aux_train_states, loss, metric = agent_train_step_fn(
                 train_state, aux_train_states, traj_batch, new_last_obs, _rng
             )
-            metric["dormancy"] = traj_batch.info["dormancy"]
+            metric["dormancy"] = dormancy
 
             runner_state = (
                 train_state,

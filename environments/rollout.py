@@ -155,6 +155,15 @@ class LogDormancyWrapper(RolloutWrapper):
         self.tau = tau
         super().__init__(env_name, num_env_steps, env_kwargs)
 
+    def batch_rollout(self, rng_eval, agent_state, env_params, init_obs, init_state):
+        """Rollout an agent on a single environment over a batch of seeds and environment states."""
+        batch_rollout = jax.vmap(self.single_rollout, in_axes=(0, None, None, 0, 0))
+        end_state, end_obs, (traj_batch, activations) = batch_rollout(
+            rng_eval, agent_state, env_params, init_obs, init_state
+        )
+        dormancy = dormancy_rate(activations, tau=self.tau)
+        return end_state, end_obs, traj_batch, dormancy
+
     def single_rollout(
         self, rng_episode, agent_state, env_params, init_obs, init_state
     ):
@@ -173,12 +182,11 @@ class LogDormancyWrapper(RolloutWrapper):
             obsv, env_state, reward, done, info = self.env.step(
                 _rng, env_state, action, env_params
             )
-            info["dormancy"] = dormancy_rate(inter_vals, tau=self.tau)
             transition = Transition(
                 done, action, value, reward, log_prob, last_obs, obsv, info
             )
             runner_state = (train_state, env_state, obsv, rng)
-            return runner_state, transition
+            return runner_state, (transition, inter_vals)
 
         # Scan over episode step loop
         carry_out, scan_out = jax.lax.scan(
