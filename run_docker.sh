@@ -1,5 +1,5 @@
 #!/bin/bash
-WANDB_API_KEY=$(cat ./docker/wandb_key)
+WANDB_API_KEY=$(cat ./setup/wandb_key)
 git pull
 
 script_and_args="${@:2}"
