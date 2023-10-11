@@ -91,7 +91,7 @@ class RolloutWrapper:
         def _env_step(runner_state, _):
             train_state, env_state, last_obs, rng = runner_state
             rng, _rng = jax.random.split(rng)
-            pi, value = agent_state.apply_fn(agent_state.params, last_obs)
+            pi, value, _ = agent_state.apply_fn(agent_state.params, last_obs)
             action = pi.sample(seed=_rng)
             log_prob = pi.log_prob(action)
             rng, _rng = jax.random.split(rng)
@@ -172,10 +172,9 @@ class LogDormancyWrapper(RolloutWrapper):
         def _env_step(runner_state, _):
             train_state, env_state, last_obs, rng = runner_state
             rng, _rng = jax.random.split(rng)
-            (pi, value), inter_vals = agent_state.apply_fn(
-                agent_state.params, last_obs, capture_intermediates=True
+            pi, value, logged_activations = agent_state.apply_fn(
+                agent_state.params, last_obs
             )
-            inter_vals = inter_vals["intermediates"]
             action = pi.sample(seed=_rng)
             log_prob = pi.log_prob(action)
             rng, _rng = jax.random.split(rng)
@@ -186,7 +185,7 @@ class LogDormancyWrapper(RolloutWrapper):
                 done, action, value, reward, log_prob, last_obs, obsv, info
             )
             runner_state = (train_state, env_state, obsv, rng)
-            return runner_state, (transition, inter_vals)
+            return runner_state, (transition, logged_activations)
 
         # Scan over episode step loop
         carry_out, scan_out = jax.lax.scan(

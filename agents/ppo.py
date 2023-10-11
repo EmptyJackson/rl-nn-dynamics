@@ -14,7 +14,7 @@ def make_train_step(args, network):
                 traj_batch, advantages, targets = batch_info
 
                 def _loss_fn(params, traj_batch, gae, targets):
-                    pi, value = network.apply(params, traj_batch.obs)
+                    pi, value, _ = network.apply(params, traj_batch.obs)
                     log_prob = pi.log_prob(traj_batch.action)
 
                     # Value loss
@@ -69,7 +69,7 @@ def make_train_step(args, network):
             return update_state, loss
 
         # --- Calculate advantage ---
-        _, last_val = network.apply(train_state.params, last_obs)
+        _, last_val, _ = network.apply(train_state.params, last_obs)
         advantages, targets = jax.vmap(calculate_gae, in_axes=(None, 0, 0))(
             args, traj_batch, last_val
         )

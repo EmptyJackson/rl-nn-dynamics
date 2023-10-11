@@ -44,10 +44,10 @@ def log_results(args, results):
                     "return": step_ret,
                     "step": step,
                     **{k: v[:, step].mean() for k, v in results["loss"].items()},
-                    # Log dormancy for first agent
+                    # Log dormancy for first agent only
                     "dormancy": {
                         **{
-                            k: v[0][:, step].mean()
+                            k: v[0, step].mean()
                             for k, v in results["metrics"]["dormancy"].items()
                         },
                     },

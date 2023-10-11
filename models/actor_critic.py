@@ -12,6 +12,7 @@ class ActorCritic(nn.Module):
 
     @nn.compact
     def __call__(self, x):
+        logged_activations = {}
         if self.activation == "relu":
             activation = nn.relu
         else:
@@ -23,6 +24,7 @@ class ActorCritic(nn.Module):
             name="actor_0",
         )(x)
         actor_mean = activation(actor_mean)
+        logged_activations["actor_0"] = actor_mean
         actor_mean = nn.Dense(
             256,
             kernel_init=orthogonal(np.sqrt(2)),
@@ -30,6 +32,7 @@ class ActorCritic(nn.Module):
             name="actor_1",
         )(actor_mean)
         actor_mean = activation(actor_mean)
+        logged_activations["actor_1"] = actor_mean
         actor_mean = nn.Dense(
             self.num_actions,
             kernel_init=orthogonal(0.01),
@@ -45,6 +48,7 @@ class ActorCritic(nn.Module):
             name="critic_0",
         )(x)
         critic = activation(critic)
+        logged_activations["critic_0"] = critic
         critic = nn.Dense(
             256,
             kernel_init=orthogonal(np.sqrt(2)),
@@ -52,11 +56,12 @@ class ActorCritic(nn.Module):
             name="critic_1",
         )(critic)
         critic = activation(critic)
+        logged_activations["critic_1"] = critic
         critic = nn.Dense(
             1, kernel_init=orthogonal(1.0), bias_init=constant(0.0), name="critic_out"
         )(critic)
 
-        return pi, jnp.squeeze(critic, axis=-1)
+        return pi, jnp.squeeze(critic, axis=-1), logged_activations
 
     def init_args(self, obs_shape, num_actions):
         return (jnp.zeros(obs_shape),)
