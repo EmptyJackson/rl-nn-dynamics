@@ -8,6 +8,8 @@ INTER_LAYERS = ["actor_0", "actor_1", "critic_0", "critic_1"]
 def dormancy_rate(activations, tau):
     def _layer_dormancy(activations):
         """Proportion of dormant layer neurons in an activation batch"""
+        # Bit of a hack: manually apply relu activations to all the neurons
+        activations = jnp.maximum(activations, 0.0)
         activations = jnp.abs(activations)
         layer_mean = activations.mean()
 
