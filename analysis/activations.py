@@ -13,10 +13,10 @@ def dormancy_rate(activations, tau):
 
         def _batch_dormant(activations):
             # V1 - All samples dormant
-            # sample_dormant = (activations / layer_mean) < tau
+            # sample_dormant = (activations / layer_mean) <= tau
             # return jnp.all(sample_dormant)
             # V2 - Mean dormant
-            return (jnp.mean(activations) / layer_mean) < tau
+            return (jnp.mean(activations) / layer_mean) <= tau
 
         neuron_dormant = jax.vmap(_batch_dormant, in_axes=-1, out_axes=-1)(activations)
         return jnp.mean(neuron_dormant)
