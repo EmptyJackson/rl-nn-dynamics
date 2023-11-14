@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 
+from analysis.activations import threshold_grad_second_moment
 from agents.common import construct_minibatches, calculate_gae
 
 
@@ -65,9 +66,9 @@ def make_train_step(args, network):
                 (total_loss, (value_loss, actor_loss, entropy)), grads = grad_fn(
                     train_state.params, traj_batch, advantages, targets
                 )
-                grad_second_moment = jax.tree_map(
-                    lambda x: jnp.square(x).mean(axis=0), grads
-                )
+                grad_second_moment = jax.tree_map(jnp.square, grads)
+                threshold_gsm = threshold_grad_second_moment(grad_second_moment, 1e-7)
+                grad_second_moment = jax.tree_map(lambda x: x.mean(axis=0), grads)
                 grads = jax.tree_map(lambda x: x.mean(axis=0), grads)
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, {
@@ -76,6 +77,7 @@ def make_train_step(args, network):
                     "total_loss": total_loss,
                     "entropy": entropy,
                     "grad_second_moment": grad_second_moment,
+                    "threshold_grad_second_moment": threshold_gsm,
                 }
 
             # --- Iterate over minibatches ---

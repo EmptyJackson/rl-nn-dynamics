@@ -1,5 +1,6 @@
 import wandb
 import jax.numpy as jnp
+import jax
 
 
 def init_logger(args):
@@ -52,7 +53,8 @@ def log_results(args, results):
                     **{
                         k: v[:, step].mean()
                         for k, v in results["loss"].items()
-                        if k != "grad_second_moment"
+                        if k
+                        not in {"grad_second_moment", "threshold_grad_second_moment"}
                     },
                     # Log dormancy for first agent only
                     "dormancy": {
@@ -61,6 +63,10 @@ def log_results(args, results):
                             for k, v in results["metrics"]["dormancy"].items()
                         },
                     },
+                    "threshold_grad_second_moment": jax.tree_map(
+                        lambda x: x[:, step].mean(),
+                        results["loss"]["threshold_grad_second_moment"],
+                    ),
                     "grad_second_moment": grad_second_moment,
                 }
             )
