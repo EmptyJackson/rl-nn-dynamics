@@ -13,6 +13,13 @@ def make_train_step(args, network):
                 # --- Update agent ---
                 traj_batch, advantages, targets = batch_info
 
+                # We want to look at the second moment of the
+                # gradient in this project. Usually we use the
+                # property that the gradient of the mean is the
+                # mean of the gradient (because differentiation is linear)
+                # but now that we are squaring the gradient, we need to
+                # compute the loss and differentiate *per-sample*
+                # then we can square and average all the gradient estimates.
                 def _loss_fn(params, traj_batch, gae, targets):
                     pi, value, _ = network.apply(params, traj_batch.obs)
                     log_prob = pi.log_prob(traj_batch.action)
@@ -29,7 +36,6 @@ def make_train_step(args, network):
 
                     # Actor loss
                     ratio = jnp.exp(log_prob - traj_batch.log_prob)
-                    gae = (gae - gae.mean()) / (gae.std() + 1e-8)
                     actor_loss1 = ratio * gae
                     actor_loss2 = (
                         jnp.clip(
@@ -49,15 +55,27 @@ def make_train_step(args, network):
                     )
                     return total_loss, (value_loss, actor_loss, entropy)
 
-                grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
+                grad_fn = jax.vmap(
+                    jax.value_and_grad(_loss_fn, has_aux=True), in_axes=(None, 0, 0, 0)
+                )
+
+                advantages = (advantages - advantages.mean()) / (
+                    advantages.std() + 1e-8
+                )
                 (total_loss, (value_loss, actor_loss, entropy)), grads = grad_fn(
                     train_state.params, traj_batch, advantages, targets
                 )
+                grad_second_moment = jax.tree_map(
+                    lambda x: jnp.square(x).mean(axis=0), grads
+                )
+                grads = jax.tree_map(lambda x: x.mean(axis=0), grads)
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, {
                     "value_loss": value_loss,
                     "actor_loss": actor_loss,
+                    "total_loss": total_loss,
                     "entropy": entropy,
+                    "grad_second_moment": grad_second_moment,
                 }
 
             # --- Iterate over minibatches ---
@@ -81,8 +99,11 @@ def make_train_step(args, network):
         )
         train_state = update_state[0]
         info = traj_batch.info
+        grad_second_moment = metrics["grad_second_moment"]
         metrics = jax.tree_map(lambda x: x.mean(), metrics)
-
+        metrics["grad_second_moment"] = jax.tree_map(
+            lambda x: jnp.histogram(jnp.log(x + 1e-7), bins=64), grad_second_moment
+        )
         # No auxiliary networks
         return train_state, aux_train_states, metrics, info
 

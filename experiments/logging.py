@@ -39,11 +39,21 @@ def log_results(args, results):
             step_ret = None
             if step >= all_done_step:
                 step_ret = return_list[step - all_done_step]
+            grad_second_moment = {}
+            for k, v in results["loss"]["grad_second_moment"]["params"].items():
+                grad_second_moment[k] = {
+                    kk: wandb.Histogram(np_histogram=(vv[0][0, step], vv[1][0, step]))
+                    for kk, vv in v.items()
+                }
             wandb.log(
                 {
                     "return": step_ret,
                     "step": step,
-                    **{k: v[:, step].mean() for k, v in results["loss"].items()},
+                    **{
+                        k: v[:, step].mean()
+                        for k, v in results["loss"].items()
+                        if k != "grad_second_moment"
+                    },
                     # Log dormancy for first agent only
                     "dormancy": {
                         **{
@@ -51,6 +61,7 @@ def log_results(args, results):
                             for k, v in results["metrics"]["dormancy"].items()
                         },
                     },
+                    "grad_second_moment": grad_second_moment,
                 }
             )
     else:

@@ -15,8 +15,12 @@ class ActorCritic(nn.Module):
         logged_activations = {}
         if self.activation == "relu":
             activation = nn.relu
-        else:
+        elif self.activation == "tanh":
             activation = nn.tanh
+        elif self.activation == "leaky_relu":
+            activation = nn.leaky_relu
+        else:
+            raise ValueError("Activation not recognised")
         actor_mean = nn.Dense(
             256,
             kernel_init=orthogonal(np.sqrt(2)),
