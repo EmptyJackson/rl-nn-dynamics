@@ -33,7 +33,9 @@ def threshold_grad_second_moment(
 
         def _batch_threshold_grad_second_moment(grad_second_moment, params):
             thresh_abs = jnp.mean(grad_second_moment) <= zeta_abs
-            thresh_rel = (jnp.sqrt(jnp.mean(grad_second_moment)) / params) <= zeta_rel
+            thresh_rel = (
+                jnp.sqrt(jnp.mean(grad_second_moment)) / jnp.abs(params)
+            ) <= zeta_rel
             return jax.lax.cond(
                 zeta_rel == 0.0,
                 thresh_abs,
