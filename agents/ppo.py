@@ -67,8 +67,15 @@ def make_train_step(args, network):
                     train_state.params, traj_batch, advantages, targets
                 )
                 grad_second_moment = jax.tree_map(jnp.square, grads)
-                threshold_gsm = threshold_grad_second_moment(grad_second_moment, 1e-7)
-                grad_second_moment = jax.tree_map(lambda x: x.mean(axis=0), grads)
+                threshold_gsm = threshold_grad_second_moment(
+                    train_state.params,
+                    grad_second_moment,
+                    zeta_abs=args.zeta_abs,
+                    zeta_rel=args.zeta_rel,
+                )
+                grad_second_moment = jax.tree_map(
+                    lambda x: x.mean(axis=0), grad_second_moment
+                )
                 grads = jax.tree_map(lambda x: x.mean(axis=0), grads)
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, {
@@ -104,7 +111,8 @@ def make_train_step(args, network):
         grad_second_moment = metrics["grad_second_moment"]
         metrics = jax.tree_map(lambda x: x.mean(), metrics)
         metrics["grad_second_moment"] = jax.tree_map(
-            lambda x: jnp.histogram(jnp.log(x + 1e-7), bins=64), grad_second_moment
+            lambda x: jnp.histogram(jnp.log(x + args.zeta_abs), bins=64),
+            grad_second_moment,
         )
         # No auxiliary networks
         return train_state, aux_train_states, metrics, info

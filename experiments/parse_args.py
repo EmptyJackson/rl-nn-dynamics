@@ -86,6 +86,20 @@ def parse_args(cmd_args=sys.argv[1:]):
     # Dormancy
     parser.add_argument("--tau", type=float, default=0.1, help="Dormancy threshold")
 
+    # Grad Second Moment
+    parser.add_argument(
+        "--zeta_abs",
+        type=float,
+        default=1e-14,
+        help="The absolute tolerance in grad second moment",
+    )
+    parser.add_argument(
+        "--zeta_rel",
+        type=float,
+        default=1e-6,
+        help="The relative tolerance in grad second moment",
+    )
+
     # Logging
     parser.add_argument("--log", action="store_true")
     parser.add_argument(

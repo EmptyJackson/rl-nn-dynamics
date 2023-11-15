@@ -24,32 +24,35 @@ def dormancy_rate(activations, tau):
     return jax.tree_map(_layer_dormancy, activations)
 
 
-def threshold_grad_second_moment(grad_second_moment, zeta):
-    def _threshold_grad_second_moment(grad_second_moment):
+def threshold_grad_second_moment(
+    params, grad_second_moment, zeta_abs=1e-14, zeta_rel=1e-6
+):
+    def _threshold_grad_second_moment(grad_second_moment, params):
         grad_second_moment = grad_second_moment.reshape(grad_second_moment.shape[0], -1)
+        params = params.reshape(-1)
 
-        def _batch_threshold_grad_second_moment(grad_second_moment):
-            return jnp.mean(grad_second_moment) <= zeta
+        def _batch_threshold_grad_second_moment(grad_second_moment, params):
+            return (jnp.mean(grad_second_moment) <= zeta_abs) | (
+                (jnp.sqrt(jnp.mean(grad_second_moment)) / params) <= zeta_rel
+            )
 
         threshold_gsm = jax.vmap(
-            _batch_threshold_grad_second_moment, in_axes=-1, out_axes=-1
-        )(grad_second_moment)
+            _batch_threshold_grad_second_moment, in_axes=(-1, -1), out_axes=-1
+        )(grad_second_moment, params)
         return jnp.mean(threshold_gsm)
 
-    return jax.tree_map(_threshold_grad_second_moment, grad_second_moment)
+    return jax.tree_map(_threshold_grad_second_moment, grad_second_moment, params)
 
 
 if __name__ == "__main__":
-    gsm = {
-        "params": {
-            "actor_0": {
-                "kernel": jnp.ones((16, 32, 64)),
-                "bias": 2 + jnp.zeros((16, 32)),
-            }
+    gsm = {"actor_0": {"kernel": 1e-5 * jnp.ones((3, 2, 4)), "bias": jnp.ones((3, 4))}}
+    params = {
+        "actor_0": {
+            "kernel": 1e-6 * jnp.ones((3, 2, 4)),
+            "bias": 1000 * jnp.ones((3, 4)),
         }
     }
-    print(threshold_grad_second_moment(gsm, 1))
-    gsm["params"]["actor_0"]["bias"] = (
-        gsm["params"]["actor_0"]["bias"].at[0:16:2, 0].set(0)
-    )
-    print(threshold_grad_second_moment(gsm, 1))
+
+    print(threshold_grad_second_moment(params, gsm, zeta_abs=1e-4, zeta_rel=1e-9))
+
+    print(threshold_grad_second_moment(params, gsm, zeta_abs=1e-10, zeta_rel=1e-2))
