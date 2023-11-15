@@ -1,0 +1,35 @@
+entity: benellis3
+project: rl-nn-dynamics
+program: train.py
+command:
+  - python3
+  - ${program}
+  - ${args_no_boolean_flags}
+method: grid
+parameters:
+  log:
+    values:
+      - True
+  num_train_steps:
+    values:
+      - 4882
+  tau:
+    values:
+      - 0.0
+  zeta_abs:
+    values:
+      - 1e-16
+      - 1e-14
+      - 1e-12
+      - 1e-10
+      - 1e-8
+  zeta_rel:
+    values:
+      - 0.0
+  agent:
+    values:
+      - ppo
+  env_name:
+    values:
+      - Asterix-MinAtar
+  

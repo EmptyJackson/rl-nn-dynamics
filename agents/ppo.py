@@ -68,8 +68,8 @@ def make_train_step(args, network):
                 )
                 grad_second_moment = jax.tree_map(jnp.square, grads)
                 threshold_gsm = threshold_grad_second_moment(
-                    train_state.params,
                     grad_second_moment,
+                    train_state.params,
                     zeta_abs=args.zeta_abs,
                     zeta_rel=args.zeta_rel,
                 )

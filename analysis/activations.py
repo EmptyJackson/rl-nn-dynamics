@@ -25,15 +25,21 @@ def dormancy_rate(activations, tau):
 
 
 def threshold_grad_second_moment(
-    params, grad_second_moment, zeta_abs=1e-14, zeta_rel=1e-6
+    grad_second_moment, params, zeta_abs=1e-14, zeta_rel=1e-6
 ):
     def _threshold_grad_second_moment(grad_second_moment, params):
         grad_second_moment = grad_second_moment.reshape(grad_second_moment.shape[0], -1)
         params = params.reshape(-1)
 
         def _batch_threshold_grad_second_moment(grad_second_moment, params):
-            return (jnp.mean(grad_second_moment) <= zeta_abs) | (
-                (jnp.sqrt(jnp.mean(grad_second_moment)) / params) <= zeta_rel
+            thresh_abs = jnp.mean(grad_second_moment) <= zeta_abs
+            thresh_rel = (jnp.sqrt(jnp.mean(grad_second_moment)) / params) <= zeta_rel
+            return jax.lax.cond(
+                zeta_rel == 0.0,
+                thresh_abs,
+                jax.lax.cond(
+                    zeta_abs == 0.0, thresh_rel, jnp.logical_or(thresh_abs, thresh_rel)
+                ),
             )
 
         threshold_gsm = jax.vmap(
