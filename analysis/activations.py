@@ -36,13 +36,7 @@ def threshold_grad_second_moment(
             thresh_rel = (
                 jnp.sqrt(jnp.mean(grad_second_moment)) / jnp.abs(params)
             ) <= zeta_rel
-            return jax.lax.cond(
-                zeta_rel == 0.0,
-                thresh_abs,
-                jax.lax.cond(
-                    zeta_abs == 0.0, thresh_rel, jnp.logical_or(thresh_abs, thresh_rel)
-                ),
-            )
+            return jnp.logical_or(thresh_abs, thresh_rel)
 
         threshold_gsm = jax.vmap(
             _batch_threshold_grad_second_moment, in_axes=(-1, -1), out_axes=-1
