@@ -69,6 +69,10 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--ppo_clip_eps", type=float, default=0.2, help="PPO clip epsilon"
     )
 
+    parser.add_argument(
+        "--optimizer", type=str, default="adam", help="The optimizer to use"
+    )
+
     # SAC
     parser.add_argument(
         "--sac_n_critics", type=int, default=2, help="Number of critics"

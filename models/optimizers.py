@@ -15,12 +15,24 @@ def _linear_schedule(count, args):
 
 
 def create_optimizer(args):
-    if args.anneal_lr:
+    if args.optimizer == "adam":
+        if args.anneal_lr:
+            return optax.chain(
+                optax.clip_by_global_norm(args.max_grad_norm),
+                optax.adam(
+                    learning_rate=partial(_linear_schedule, args=args), eps=1e-5
+                ),
+            )
         return optax.chain(
             optax.clip_by_global_norm(args.max_grad_norm),
-            optax.adam(learning_rate=partial(_linear_schedule, args=args), eps=1e-5),
+            optax.adam(args.lr, eps=1e-5),
         )
-    return optax.chain(
-        optax.clip_by_global_norm(args.max_grad_norm),
-        optax.adam(args.lr, eps=1e-5),
-    )
+    elif args.optimizer == "sgd":
+        if args.anneal_lr:
+            return optax.chain(
+                optax.clip_by_global_norm(args.max_grad_norm),
+                optax.sgd(learning_rate=partial(_linear_schedule, args=args)),
+            )
+        return optax.chain(
+            optax.clip_by_global_norm(args.max_grad_norm), optax.sgd(args.lr)
+        )
