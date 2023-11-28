@@ -56,6 +56,8 @@ def parse_args(cmd_args=sys.argv[1:]):
 
     # Optimization
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--b1", type=float, default=0.9, help="Beta_1 in Adam")
+    parser.add_argument("--b2", type=float, default=0.999, help="Beta_2 in Adam")
     parser.add_argument("--anneal_lr", action="store_true", help="Anneal learning rate")
     parser.add_argument(
         "--max_grad_norm", type=float, default=0.5, help="Max gradient norm"

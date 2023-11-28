@@ -20,7 +20,10 @@ def create_optimizer(args):
             return optax.chain(
                 optax.clip_by_global_norm(args.max_grad_norm),
                 optax.adam(
-                    learning_rate=partial(_linear_schedule, args=args), eps=1e-5
+                    learning_rate=partial(_linear_schedule, args=args),
+                    b1=args.b1,
+                    b2=args.b2,
+                    eps=1e-5,
                 ),
             )
         return optax.chain(
