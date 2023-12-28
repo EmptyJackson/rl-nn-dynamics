@@ -46,8 +46,8 @@ def make_train(args):
             train_state, aux_train_states, loss, metric = agent_train_step_fn(
                 train_state, aux_train_states, traj_batch, new_last_obs, _rng
             )
-            metric = jax.tree_map(jnp.mean, metric)
             metric["dormancy"] = dormancy
+            metric, loss = jax.tree_map(jnp.mean, (metric, loss))
 
             runner_state = (
                 train_state,
@@ -56,11 +56,11 @@ def make_train(args):
                 new_last_obs,
                 rng,
             )
-            return runner_state, (loss, metric, traj_batch)
+            return runner_state, (loss, metric)
 
         rng, _rng = jax.random.split(rng)
         runner_state = (train_state, aux_train_states, env_state, obsv, _rng)
-        runner_state, (loss, metric, traj_batch) = jax.lax.scan(
+        runner_state, (loss, metric) = jax.lax.scan(
             _train_step, runner_state, None, args.num_train_steps
         )
         ret = {
