@@ -63,7 +63,9 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--max_grad_norm", type=float, default=0.5, help="Max gradient norm"
     )
     parser.add_argument(
-        "reset_momentum", action="store_true", help="Reset momentum when target changes"
+        "--reset_momentum",
+        action="store_true",
+        help="Reset momentum when target changes",
     )
 
     # PPO
