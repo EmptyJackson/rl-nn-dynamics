@@ -107,6 +107,9 @@ def make_train_step(args, network):
             _update_epoch, update_state, None, args.ppo_num_epochs
         )
         train_state = update_state[0]
+        if args.reset_momentum:
+            reset_opt_state = jax.tree_map(jnp.zeros_like, train_state.opt_state)
+            train_state = train_state.replace(opt_state=reset_opt_state)
         info = traj_batch.info
         grad_second_moment = metrics["grad_second_moment"]
         metrics = jax.tree_map(lambda x: x.mean(), metrics)
