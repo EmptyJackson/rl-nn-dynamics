@@ -40,35 +40,36 @@ def log_results(args, results):
             step_ret = None
             if step >= all_done_step:
                 step_ret = return_list[step - all_done_step]
-            grad_second_moment = {}
-            for k, v in results["loss"]["grad_second_moment"]["params"].items():
-                grad_second_moment[k] = {
-                    kk: wandb.Histogram(np_histogram=(vv[0][0, step], vv[1][0, step]))
-                    for kk, vv in v.items()
-                }
-            wandb.log(
-                {
-                    "return": step_ret,
-                    "step": step,
+            log_dict = {
+                "return": step_ret,
+                "step": step,
+                **{
+                    k: v[:, step].mean()
+                    for k, v in results["loss"].items()
+                    if k not in {"grad_second_moment", "threshold_grad_second_moment"}
+                },
+                # Log dormancy for first agent only
+                "dormancy": {
                     **{
-                        k: v[:, step].mean()
-                        for k, v in results["loss"].items()
-                        if k
-                        not in {"grad_second_moment", "threshold_grad_second_moment"}
+                        k: v[0, step].mean()
+                        for k, v in results["metrics"]["dormancy"].items()
                     },
-                    # Log dormancy for first agent only
-                    "dormancy": {
-                        **{
-                            k: v[0, step].mean()
-                            for k, v in results["metrics"]["dormancy"].items()
-                        },
-                    },
-                    "threshold_grad_second_moment": jax.tree_map(
-                        lambda x: x[:, step].mean(),
-                        results["loss"]["threshold_grad_second_moment"],
-                    ),
-                    "grad_second_moment": grad_second_moment,
-                }
-            )
+                },
+            }
+            if args.log_gsm:
+                grad_second_moment = {}
+                for k, v in results["loss"]["grad_second_moment"]["params"].items():
+                    grad_second_moment[k] = {
+                        kk: wandb.Histogram(
+                            np_histogram=(vv[0][0, step], vv[1][0, step])
+                        )
+                        for kk, vv in v.items()
+                    }
+                log_dict["grad_second_moment"] = grad_second_moment
+                log_dict["threshold_grad_second_moment"] = jax.tree_map(
+                    lambda x: x[:, step].mean(),
+                    results["loss"]["threshold_grad_second_moment"],
+                )
+            wandb.log(log_dict)
     else:
         print("Step returns:", jnp.around(jnp.array(return_list), decimals=2))

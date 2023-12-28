@@ -97,6 +97,9 @@ def parse_args(cmd_args=sys.argv[1:]):
 
     # Grad Second Moment
     parser.add_argument(
+        "--log_gsm", action="store_true", help="Log gradient second moment"
+    )
+    parser.add_argument(
         "--zeta_abs",
         type=float,
         default=1e-14,
