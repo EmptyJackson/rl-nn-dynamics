@@ -25,7 +25,7 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--env_name", type=str, default="CartPole-v1", help="Environment name"
     )
     parser.add_argument(
-        "--num_env_workers", type=int, default=16, help="Number of environment workers"
+        "--num_env_workers", type=int, default=4, help="Number of environment workers"
     )
 
     # Agent
@@ -55,7 +55,7 @@ def parse_args(cmd_args=sys.argv[1:]):
     )
 
     # Optimization
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
     parser.add_argument("--b1", type=float, default=0.9, help="Beta_1 in Adam")
     parser.add_argument("--b2", type=float, default=0.999, help="Beta_2 in Adam")
     parser.add_argument("--anneal_lr", action="store_true", help="Anneal learning rate")
@@ -95,7 +95,7 @@ def parse_args(cmd_args=sys.argv[1:]):
     )
 
     # Dormancy
-    parser.add_argument("--tau", type=float, default=0.1, help="Dormancy threshold")
+    parser.add_argument("--tau", type=float, default=0.0, help="Dormancy threshold")
 
     # Grad Second Moment
     parser.add_argument(
