@@ -22,7 +22,7 @@ class ActorCritic(nn.Module):
         else:
             raise ValueError("Activation not recognised")
         actor_mean = nn.Dense(
-            512,
+            256,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="actor_0",
@@ -30,7 +30,7 @@ class ActorCritic(nn.Module):
         actor_mean = activation(actor_mean)
         logged_activations["actor_0"] = actor_mean
         actor_mean = nn.Dense(
-            512,
+            256,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="actor_1",
@@ -46,7 +46,7 @@ class ActorCritic(nn.Module):
         pi = distrax.Categorical(logits=actor_mean)
 
         critic = nn.Dense(
-            512,
+            256,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="critic_0",
@@ -54,7 +54,7 @@ class ActorCritic(nn.Module):
         critic = activation(critic)
         logged_activations["critic_0"] = critic
         critic = nn.Dense(
-            512,
+            256,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="critic_1",

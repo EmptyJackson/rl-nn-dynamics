@@ -1,15 +1,23 @@
 import distrax
 import jax.numpy as jnp
 import flax.linen as nn
+from flax.linen.initializers import constant, uniform
 from typing import Sequence
 
 
 LOG_STD_MAX = 2
-LOG_STD_MIN = -20
+LOG_STD_MIN = -5
+
+
+def sym_uniform(scale):
+    def _init(*args, **kwargs):
+        return uniform(2 * scale)(*args, **kwargs) - scale
+
+    return _init
 
 
 class SoftQNetwork(nn.Module):
-    activation: str = "tanh"
+    activation: str = "relu"
 
     @nn.compact
     def __call__(self, obs, action):
@@ -18,11 +26,13 @@ class SoftQNetwork(nn.Module):
         else:
             activation = nn.tanh
         x = jnp.concatenate([obs, action], axis=-1)
-        x = nn.Dense(64)(x)
+        x = nn.Dense(256, bias_init=constant(0.1))(x)
         x = activation(x)
-        x = nn.Dense(64)(x)
+        x = nn.Dense(256, bias_init=constant(0.1))(x)
         x = activation(x)
-        q = nn.Dense(1)(x)
+        x = nn.Dense(256, bias_init=constant(0.1))(x)
+        x = activation(x)
+        q = nn.Dense(1, kernel_init=sym_uniform(3e-3), bias_init=sym_uniform(3e-3))(x)
         return jnp.squeeze(q, axis=-1)
 
     def init_args(self, obs_shape, num_actions):
@@ -30,7 +40,7 @@ class SoftQNetwork(nn.Module):
 
 
 class VectorCritic(nn.Module):
-    activation: str = "tanh"
+    activation: str = "relu"
     n_critics: int = 2
 
     @nn.compact
@@ -54,7 +64,7 @@ class VectorCritic(nn.Module):
 
 class TanhGaussianActor(nn.Module):
     action_dim: Sequence[int]
-    activation: str = "tanh"
+    activation: str = "relu"
     action_lims: Sequence[float] = (-1.0, 1.0)
 
     @nn.compact
@@ -63,12 +73,18 @@ class TanhGaussianActor(nn.Module):
             activation = nn.relu
         else:
             activation = nn.tanh
-        actor_x = nn.Dense(64)(x)
+        actor_x = nn.Dense(256, bias_init=constant(0.1))(x)
         actor_x = activation(actor_x)
-        actor_x = nn.Dense(64)(actor_x)
+        actor_x = nn.Dense(256, bias_init=constant(0.1))(x)
         actor_x = activation(actor_x)
-        actor_mean = nn.Dense(self.action_dim)(actor_x)
-        actor_logstd = nn.Dense(self.action_dim)(actor_x)
+        actor_x = nn.Dense(256, bias_init=constant(0.1))(x)
+        actor_x = activation(actor_x)
+        actor_mean = nn.Dense(
+            self.action_dim, kernel_init=sym_uniform(1e-3), bias_init=sym_uniform(1e-3)
+        )(actor_x)
+        actor_logstd = nn.Dense(
+            self.action_dim, kernel_init=sym_uniform(1e-3), bias_init=sym_uniform(1e-3)
+        )(actor_x)
         actor_logstd = jnp.clip(actor_logstd, LOG_STD_MIN, LOG_STD_MAX)
         action_scale = (self.action_lims[1] - self.action_lims[0]) / 2
         action_bias = (self.action_lims[1] + self.action_lims[0]) / 2
