@@ -55,17 +55,15 @@ def parse_args(cmd_args=sys.argv[1:]):
     )
 
     # Optimization
+    parser.add_argument(
+        "--optimizer", type=str, default="adam", help="The optimizer to use"
+    )
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
     parser.add_argument("--b1", type=float, default=0.9, help="Beta_1 in Adam")
     parser.add_argument("--b2", type=float, default=0.999, help="Beta_2 in Adam")
     parser.add_argument("--anneal_lr", action="store_true", help="Anneal learning rate")
     parser.add_argument(
         "--max_grad_norm", type=float, default=0.5, help="Max gradient norm"
-    )
-    parser.add_argument(
-        "--reset_momentum",
-        action="store_true",
-        help="Reset momentum when target changes",
     )
 
     # PPO
@@ -75,9 +73,11 @@ def parse_args(cmd_args=sys.argv[1:]):
     parser.add_argument(
         "--ppo_clip_eps", type=float, default=0.2, help="PPO clip epsilon"
     )
-
     parser.add_argument(
-        "--optimizer", type=str, default="adam", help="The optimizer to use"
+        "--ppo_reset_on_batch",
+        type=str,
+        default="none",
+        help="Optimizer properties to reset when a new batch is sampled (none, count, all)",
     )
 
     # SAC

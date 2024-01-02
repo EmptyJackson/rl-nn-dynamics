@@ -114,9 +114,22 @@ def make_train_step(args, network):
             _update_epoch, update_state, None, args.ppo_num_epochs
         )
         train_state = update_state[0]
-        if args.reset_momentum:
-            reset_opt_state = jax.tree_map(jnp.zeros_like, train_state.opt_state)
-            train_state = train_state.replace(opt_state=reset_opt_state)
+
+        # --- Reset optimizer state ---
+        opt_state = train_state.opt_state
+        assert args.ppo_reset_on_batch in {"count", "all", "none"}
+        if args.ppo_reset_on_batch == "count":
+            opt_state = tuple(
+                [
+                    opt_state[0],
+                    tuple([opt_state[1][0]._replace(count=0), opt_state[1][1]]),
+                ]
+            )
+        elif args.ppo_reset_on_batch == "all":
+            opt_state = jax.tree_map(jnp.zeros_like, opt_state)
+        train_state = train_state.replace(opt_state=opt_state)
+
+        # --- Return train state and metrics ---
         info = traj_batch.info
         if args.log_gsm:
             grad_second_moment = metrics["grad_second_moment"]
