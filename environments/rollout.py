@@ -8,11 +8,15 @@ from gymnax.environments import spaces
 
 from util import Transition
 from analysis.activations import dormancy_rate
+from environments.Craftax.craftax.craftax_symbolic_env import CraftaxEnv
 
 
 def get_env(env_name: str, env_kwargs: dict):
     if env_name in gymnax.registered_envs:
         env, env_params = gymnax.make(env_name, **env_kwargs)
+    elif env_name in ["Craftax-Symbolic-v1"]:
+        env = CraftaxEnv()
+        env_params = env.default_params
     else:
         raise ValueError(
             f"Environment {env_name} not registered in any environment sources."

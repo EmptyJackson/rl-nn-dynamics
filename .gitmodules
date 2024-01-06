@@ -1,0 +1,3 @@
+[submodule "environments/Craftax"]
+	path = environments/Craftax
+	url = git@github.com:MichaelTMatthews/Craftax.git
