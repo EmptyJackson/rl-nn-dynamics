@@ -10,7 +10,7 @@ else
 fi
 
 for gpu in $gpus; do
-    echo "Launching container diffrl_$gpu on GPU $gpu"
+    echo "Launching container jaxrl_$gpu on GPU $gpu"
     docker run \
         --gpus device=$gpu \
         -e WANDB_API_KEY=$WANDB_API_KEY \
