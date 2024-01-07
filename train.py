@@ -47,6 +47,14 @@ def make_train(args):
                 train_state, aux_train_states, traj_batch, new_last_obs, _rng
             )
             metric["dormancy"] = dormancy
+            # Manually aggregate Craftax achievements - NaN when no episodes end
+            metric.update(
+                {
+                    k: (v * traj_batch.done).sum() / traj_batch.done.sum()
+                    for k, v in metric.items()
+                    if "achievements" in k.lower()
+                }
+            )
             metric, loss = jax.tree_map(jnp.mean, (metric, loss))
 
             runner_state = (

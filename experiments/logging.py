@@ -31,9 +31,7 @@ def log_results(args, results):
         all_done_step += 1
     """
     all_done_step = 0
-    return_list = [
-        rets[:, step].mean() for step in range(all_done_step, num_train_steps)
-    ]
+    return_list = [*rets[:, all_done_step:num_train_steps].mean(axis=0)]
 
     if args.log:
         for step in range(rets.shape[1]):
@@ -47,6 +45,12 @@ def log_results(args, results):
                     k: v[:, step].mean()
                     for k, v in results["loss"].items()
                     if k not in {"grad_second_moment", "threshold_grad_second_moment"}
+                },
+                # Log achievements (Craftax) if present
+                **{
+                    k: v[:, step].mean()
+                    for k, v in results["metrics"].items()
+                    if "achievements" in k.lower()
                 },
                 # Log dormancy for first agent only
                 "dormancy": {

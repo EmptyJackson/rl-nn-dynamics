@@ -1,21 +1,23 @@
 import jax
+import chex
 import gymnax
 import jax.numpy as jnp
 
-from typing import Optional
+from typing import Optional, Tuple, Union
 from gymnax.wrappers.purerl import LogWrapper, FlattenObservationWrapper, GymnaxWrapper
-from gymnax.environments import spaces
+from gymnax.environments import environment, spaces
 
 from util import Transition
 from analysis.activations import dormancy_rate
 from environments.Craftax.craftax.craftax_symbolic_env import CraftaxEnv
+from environments.Craftax.craftax.constants import Achievement
 
 
 def get_env(env_name: str, env_kwargs: dict):
     if env_name in gymnax.registered_envs:
         env, env_params = gymnax.make(env_name, **env_kwargs)
     elif env_name in ["Craftax-Symbolic-v1"]:
-        env = CraftaxEnv()
+        env = CraftaxAchievementsWrapper(CraftaxEnv())
         env_params = env.default_params
     else:
         raise ValueError(
@@ -37,6 +39,26 @@ class ClipAction(GymnaxWrapper):
             self._env.action_space(params).high,
         )
         return self._env.step(key, state, action, params)
+
+
+class CraftaxAchievementsWrapper(GymnaxWrapper):
+    def __init__(self, env: environment.Environment):
+        super().__init__(env)
+
+    def step(
+        self,
+        key: chex.PRNGKey,
+        state: environment.EnvState,
+        action: Union[int, float],
+        params: Optional[environment.EnvParams] = None,
+    ) -> Tuple[chex.Array, environment.EnvState, float, bool, dict]:
+        obs, new_state, reward, done, info = self._env.step(key, state, action, params)
+        achievements = state.achievements * done
+        for achievement in Achievement:
+            name = f"Achievements/{achievement.name.lower()}"
+            info[name] = achievements[achievement.value]
+        info["num_achievements"] = jnp.sum(achievements)
+        return obs, new_state, reward, done, info
 
 
 class RolloutWrapper:
