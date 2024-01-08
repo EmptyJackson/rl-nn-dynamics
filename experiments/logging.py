@@ -3,6 +3,9 @@ import jax.numpy as jnp
 import jax
 
 
+MAX_LOG_STEPS = 5000
+
+
 def init_logger(args):
     if args.log:
         wandb.init(
@@ -16,6 +19,7 @@ def init_logger(args):
 
 def log_results(args, results):
     rets = results["metrics"]["returned_episode_returns"]
+    num_steps = rets.shape[1]
 
     # Hack to avoid logging 0 before first episodes are done
     # Required until https://github.com/RobertTLange/gymnax/issues/62 is resolved
@@ -34,7 +38,11 @@ def log_results(args, results):
     return_list = [*rets[:, all_done_step:num_train_steps].mean(axis=0)]
 
     if args.log:
-        for step in range(rets.shape[1]):
+        if num_steps > MAX_LOG_STEPS:
+            steps = jnp.linspace(0, num_steps, MAX_LOG_STEPS, dtype=jnp.int32)
+        else:
+            steps = jnp.arange(num_steps)
+        for step in steps:
             step_ret = None
             if step >= all_done_step:
                 step_ret = return_list[step - all_done_step]
