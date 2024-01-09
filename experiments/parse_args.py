@@ -95,6 +95,7 @@ def parse_args(cmd_args=sys.argv[1:]):
     )
 
     # Dormancy
+    parser.add_argument("--log_dormancy", action="store_true", help="Log dormancy")
     parser.add_argument("--tau", type=float, default=0.0, help="Dormancy threshold")
 
     # Grad Second Moment

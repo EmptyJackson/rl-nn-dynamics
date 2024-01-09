@@ -11,8 +11,12 @@ from environments.rollout import RolloutWrapper, LogDormancyWrapper
 def make_train(args):
     def train(rng):
         # --- Initialize environment ---
-        # env = RolloutWrapper(args.env_name, args.num_rollout_steps)
-        env = LogDormancyWrapper(args.env_name, args.num_rollout_steps, tau=args.tau)
+        if args.log_dormancy:
+            env = LogDormancyWrapper(
+                args.env_name, args.num_rollout_steps, tau=args.tau
+            )
+        else:
+            env = RolloutWrapper(args.env_name, args.num_rollout_steps)
         env_params = env.default_env_params
         rng, _rng = jax.random.split(rng)
         _rng = jax.random.split(_rng, args.num_env_workers)
@@ -37,16 +41,23 @@ def make_train(args):
             # --- Collect trajectories ---
             rng, _rng = jax.random.split(rng)
             _rng = jax.random.split(_rng, args.num_env_workers)
-            new_env_state, new_last_obs, traj_batch, dormancy = env.batch_rollout(
+            rollout = env.batch_rollout(
                 _rng, train_state, env_params, last_obs, env_state
             )
+            if args.log_dormancy:
+                new_env_state, new_last_obs, traj_batch, dormancy = rollout
+            else:
+                new_env_state, new_last_obs, traj_batch = rollout
 
             # --- Update agent ---
             rng, _rng = jax.random.split(rng)
             train_state, aux_train_states, loss, metric = agent_train_step_fn(
                 train_state, aux_train_states, traj_batch, new_last_obs, _rng
             )
-            metric["dormancy"] = dormancy
+
+            # --- Aggregate metrics ---
+            if args.log_dormancy:
+                metric["dormancy"] = dormancy
             # Manually aggregate Craftax achievements - NaN when no episodes end
             metric.update(
                 {
