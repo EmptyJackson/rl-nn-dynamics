@@ -60,14 +60,13 @@ def log_results(args, results):
                     for k, v in results["metrics"].items()
                     if "achievements" in k.lower()
                 },
-                # Log dormancy for first agent only
-                "dormancy": {
-                    **{
-                        k: v[0, step].mean()
-                        for k, v in results["metrics"]["dormancy"].items()
-                    },
-                },
             }
+            if args.log_dormancy:
+                # Log dormancy for first agent only
+                log_dict["dormancy"] = {
+                    k: v[0, step].mean()
+                    for k, v in results["metrics"]["dormancy"].items()
+                }
             if args.log_gsm:
                 grad_second_moment = {}
                 for k, v in results["loss"]["grad_second_moment"]["params"].items():
