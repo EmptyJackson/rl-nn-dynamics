@@ -7,6 +7,7 @@ import distrax
 
 
 class ActorCritic(nn.Module):
+    width: int
     num_actions: Sequence[int]
     activation: str = "tanh"
 
@@ -22,7 +23,7 @@ class ActorCritic(nn.Module):
         else:
             raise ValueError("Activation not recognised")
         actor_mean = nn.Dense(
-            256,
+            self.width,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="actor_0",
@@ -30,7 +31,7 @@ class ActorCritic(nn.Module):
         actor_mean = activation(actor_mean)
         logged_activations["actor_0"] = actor_mean
         actor_mean = nn.Dense(
-            256,
+            self.width,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="actor_1",
@@ -46,7 +47,7 @@ class ActorCritic(nn.Module):
         pi = distrax.Categorical(logits=actor_mean)
 
         critic = nn.Dense(
-            256,
+            self.width,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="critic_0",
@@ -54,7 +55,7 @@ class ActorCritic(nn.Module):
         critic = activation(critic)
         logged_activations["critic_0"] = critic
         critic = nn.Dense(
-            256,
+            self.width,
             kernel_init=orthogonal(np.sqrt(2)),
             bias_init=constant(0.0),
             name="critic_1",
@@ -72,6 +73,7 @@ class ActorCritic(nn.Module):
 
 
 class ActorCriticContinuous(nn.Module):
+    width: int
     num_actions: Sequence[int]
     activation: str = "tanh"
 
@@ -82,11 +84,11 @@ class ActorCriticContinuous(nn.Module):
         else:
             activation = nn.tanh
         actor_mean = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            self.width, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
         )(x)
         actor_mean = activation(actor_mean)
         actor_mean = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            self.width, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
         )(actor_mean)
         actor_mean = activation(actor_mean)
         actor_mean = nn.Dense(
@@ -98,11 +100,11 @@ class ActorCriticContinuous(nn.Module):
         pi = distrax.MultivariateNormalDiag(actor_mean, jnp.exp(actor_logtstd))
 
         critic = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            self.width, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
         )(x)
         critic = activation(critic)
         critic = nn.Dense(
-            256, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
+            self.width, kernel_init=orthogonal(np.sqrt(2)), bias_init=constant(0.0)
         )(critic)
         critic = activation(critic)
         critic = nn.Dense(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0))(

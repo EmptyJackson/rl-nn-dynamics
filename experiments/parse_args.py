@@ -17,7 +17,10 @@ def parse_args(cmd_args=sys.argv[1:]):
         "--num_agents", type=int, default=1, help="Number of agents to train"
     )
     parser.add_argument(
-        "--num_train_steps", type=int, default=100, help="Number agent train steps"
+        "--num_train_interactions",
+        type=int,
+        default=100,
+        help="Number of environment interactions",
     )
 
     # Environment
@@ -30,6 +33,7 @@ def parse_args(cmd_args=sys.argv[1:]):
 
     # Agent
     parser.add_argument("--agent", type=str, default="ppo", help="Agent type")
+    parser.add_argument("--layer_width", type=int, default=256)
     parser.add_argument(
         "--activation",
         type=str,
@@ -126,4 +130,12 @@ def parse_args(cmd_args=sys.argv[1:]):
     args, rest_args = parser.parse_known_args(cmd_args)
     if rest_args:
         raise ValueError(f"Unknown args {rest_args}")
+    args = extend_args(args)
+    return args
+
+
+def extend_args(args):
+    args.num_train_iters = args.num_train_interactions // (
+        args.num_env_workers * args.num_rollout_steps
+    )
     return args

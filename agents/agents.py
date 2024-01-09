@@ -10,7 +10,10 @@ def _get_agent_networks(args, num_actions, discrete_actions, action_lims):
         if args.agent == "ppo":
             from models.actor_critic import ActorCritic
 
-            return ActorCritic(num_actions, activation=args.activation), None
+            return (
+                ActorCritic(args.layer_width, num_actions, activation=args.activation),
+                None,
+            )
         elif args.agent == "dqn":
             from models.q_network import QNetwork
 
@@ -23,7 +26,12 @@ def _get_agent_networks(args, num_actions, discrete_actions, action_lims):
         if args.agent == "ppo":
             from models.actor_critic import ActorCriticContinuous
 
-            return ActorCriticContinuous(num_actions, activation=args.activation), None
+            return (
+                ActorCriticContinuous(
+                    args.layer_width, num_actions, activation=args.activation
+                ),
+                None,
+            )
         elif args.agent == "sac":
             from models.soft_actor_critic import (
                 TanhGaussianActor,

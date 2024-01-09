@@ -7,10 +7,10 @@ def _linear_schedule(count, args):
         frac = (
             1.0
             - (count // (args.num_minibatches * args.ppo_num_epochs))
-            / args.num_train_steps
+            / args.num_train_iters
         )
     else:
-        frac = 1.0 - (count / args.num_train_steps)
+        frac = 1.0 - (count / args.num_train_iters)
     return args.lr * frac
 
 

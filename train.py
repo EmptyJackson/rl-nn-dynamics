@@ -80,7 +80,7 @@ def make_train(args):
         rng, _rng = jax.random.split(rng)
         runner_state = (train_state, aux_train_states, env_state, obsv, _rng)
         runner_state, (loss, metric) = jax.lax.scan(
-            _train_step, runner_state, None, args.num_train_steps
+            _train_step, runner_state, None, args.num_train_iters
         )
         ret = {
             "runner_state": runner_state,
