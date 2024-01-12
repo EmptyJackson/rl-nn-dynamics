@@ -54,11 +54,11 @@ def log_results(args, results):
                     for k, v in results["loss"].items()
                     if k not in {"grad_second_moment", "threshold_grad_second_moment"}
                 },
-                # Log achievements (Craftax) if present
+                # Log achievements (Craftax) and score if present in info
                 **{
                     k: v[:, step].mean()
                     for k, v in results["metrics"].items()
-                    if "achievements" in k.lower()
+                    if any(s in k.lower() for s in ["achievement", "score"])
                 },
             }
             if args.log_dormancy:
