@@ -39,7 +39,9 @@ def log_results(args, results):
 
     if args.log:
         if num_steps > MAX_LOG_STEPS:
-            steps = jnp.linspace(0, num_steps, MAX_LOG_STEPS, dtype=jnp.int32)
+            steps = jnp.linspace(
+                0, num_steps, MAX_LOG_STEPS, dtype=jnp.int32, endpoint=False
+            )
         else:
             steps = jnp.arange(num_steps)
         for step in steps:
