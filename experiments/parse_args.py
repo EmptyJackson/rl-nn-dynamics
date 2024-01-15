@@ -121,6 +121,7 @@ def parse_args(cmd_args=sys.argv[1:]):
 
     # Logging
     parser.add_argument("--log", action="store_true")
+    parser.add_argument("--save_policy", action="store_true")
     parser.add_argument(
         "--wandb_project", type=str, default="rl-nn-dynamics", help="Wandb project"
     )

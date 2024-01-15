@@ -87,6 +87,8 @@ def make_train(args):
             "metrics": metric,
             "loss": loss,
         }
+        if args.save_policy:
+            ret["policy"] = train_state
         return ret
 
     return train

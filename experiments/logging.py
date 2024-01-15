@@ -1,6 +1,10 @@
+import os
 import wandb
 import jax.numpy as jnp
 import jax
+
+from flax.training import orbax_utils
+from orbax.checkpoint import PyTreeCheckpointer
 
 
 MAX_LOG_STEPS = 5000
@@ -18,6 +22,10 @@ def init_logger(args):
 
 
 def log_results(args, results):
+    if args.save_policy:
+        # Remove first policy from results before logging
+        policy_train_state = jax.tree_map(lambda x: x[0], results["policy"])
+        del results["policy"]
     rets = results["metrics"]["returned_episode_returns"]
     num_steps = rets.shape[1]
 
@@ -84,5 +92,12 @@ def log_results(args, results):
                     results["loss"]["threshold_grad_second_moment"],
                 )
             wandb.log(log_dict)
+        if args.save_policy:
+            ckptr = PyTreeCheckpointer()
+            ckptr.save(
+                os.path.join(wandb.run.dir, "policy"),
+                policy_train_state,
+                save_args=orbax_utils.save_args_from_target(policy_train_state),
+            )
     else:
         print("Step returns:", jnp.around(jnp.array(return_list), decimals=2))
