@@ -67,6 +67,12 @@ def parse_args(cmd_args=sys.argv[1:]):
     parser.add_argument("--b2", type=float, default=0.999, help="Beta_2 in Adam")
     parser.add_argument("--anneal_lr", action="store_true", help="Anneal learning rate")
     parser.add_argument(
+        "--inner_batch_scaling",
+        type=str,
+        default="const",
+        help="The learning rate within a batch",
+    )
+    parser.add_argument(
         "--max_grad_norm", type=float, default=0.5, help="Max gradient norm"
     )
 
