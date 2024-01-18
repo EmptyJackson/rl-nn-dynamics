@@ -73,10 +73,10 @@ def make_train_step(args, network):
                     train_state.params, traj_batch, advantages, targets
                 )
                 metrics = {
-                    "value_loss": value_loss,
-                    "actor_loss": actor_loss,
-                    "total_loss": total_loss,
-                    "entropy": entropy,
+                    "value_loss": jnp.mean(value_loss),
+                    "actor_loss": jnp.mean(actor_loss),
+                    "total_loss": jnp.mean(total_loss),
+                    "entropy": jnp.mean(entropy),
                 }
                 if args.log_gsm:
                     grad_second_moment = jax.tree_map(jnp.square, grads)
