@@ -89,6 +89,12 @@ def make_train_step(args, network):
                         "threshold_grad_second_moment": threshold_gsm,
                     }
                 grads = jax.tree_map(lambda x: x.mean(axis=0), grads)
+                metrics["grad_norm"] = jnp.sqrt(
+                    sum(jnp.sum(jnp.square(x)))
+                    for x in jax.tree_util.tree_leaves(grads)
+                )
+                # compute the adam update size
+                # compute the similarity between the gradient and the momentum estimates
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, metrics
 
