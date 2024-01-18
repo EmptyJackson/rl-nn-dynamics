@@ -158,9 +158,7 @@ def scale_by_dadam(
         del params
         mu = transform.update_moment(updates, state.mu, b1, 1)
         nu = transform.update_moment_per_elem_norm(updates, state.nu, b2, 2)
-        nu_fast = transform.update_moment_per_elem_norm(
-            updates, state.nu_fast, b2**rho, 2
-        )
+        nu_fast = transform.update_moment_per_elem_norm(updates, state.nu_fast, b1, 2)
         count_inc = numerics.safe_int32_increment(state.count)
         mu_hat = transform.bias_correction(mu, b1, count_inc)
         nu_hat = transform.bias_correction(nu, b2, count_inc)
