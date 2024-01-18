@@ -171,7 +171,9 @@ def scale_by_dadam(
             nu_fast_hat,
         )
         mu = utils.cast_tree(mu, mu_dtype)
-        return updates, ScaleByDadamState(count=count_inc, mu=mu, nu=nu)
+        return updates, ScaleByDadamState(
+            count=count_inc, mu=mu, nu=nu, nu_fast=nu_fast
+        )
 
     return base.GradientTransformation(init_fn, update_fn)
 

@@ -4,6 +4,7 @@ gymnax==0.0.6
 pre-commit==3.3.3
 wandb==0.15.8
 orbax-checkpoint==0.2.3
+optax==0.1.7
 
 imageio
 matplotlib
