@@ -1,6 +1,7 @@
 # --- Project ---
 docker/wandb_key
 wandb
+craftax_checkpoints
 
 # --- Generic ---
 # Byte-compiled / optimized / DLL files
