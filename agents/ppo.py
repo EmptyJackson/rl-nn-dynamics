@@ -5,6 +5,11 @@ from analysis.activations import threshold_grad_second_moment
 from agents.common import construct_minibatches, calculate_gae
 
 
+def compute_tree_norm(tree):
+    return jnp.sqrt(
+        sum(jnp.sum(jnp.square(x)) for x in jax.tree_util.tree_leaves(tree))
+    )
+
 def make_train_step(args, network):
     def _update_step(train_state, aux_train_states, traj_batch, last_obs, rng):
         def _update_epoch(update_state, _):
@@ -89,11 +94,9 @@ def make_train_step(args, network):
                         "threshold_grad_second_moment": threshold_gsm,
                     }
                 grads = jax.tree_map(lambda x: x.mean(axis=0), grads)
-                metrics["grad_norm"] = jnp.sqrt(
-                    sum(jnp.sum(jnp.square(x)))
-                    for x in jax.tree_util.tree_leaves(grads)
-                )
+                metrics["grad_norm"] = compute_tree_norm(grads)
                 # compute the adam update size
+                metrics["update_norm"] = compute_tree_norm(train_state.tx.update(grads, train_state.opt_state, train_state.params)[0])
                 # compute the similarity between the gradient and the momentum estimates
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, metrics

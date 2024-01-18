@@ -11,14 +11,13 @@ fi
 
 for gpu in $gpus; do
     echo "Launching container jaxrl_$gpu on GPU $gpu"
-    docker run \
+    docker run -it \
         --gpus device=$gpu \
         -e WANDB_API_KEY=$WANDB_API_KEY \
         -v $(pwd):/home/duser/rl-jax-template \
         --name jaxrl_$gpu \
         --user $(id -u) \
         --rm \
-	-d \
         -t jaxrl \
         /bin/bash -c "$script_and_args"
 done
