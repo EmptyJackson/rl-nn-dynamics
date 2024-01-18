@@ -99,7 +99,7 @@ def create_optimizer(args):
 # ---
 
 import chex
-from typing import Any, Optional, NamedTuple
+from typing import Any, Optional, NamedTuple, Union
 from optax._src import alias
 from optax._src import base
 from optax._src import combine
@@ -178,8 +178,11 @@ def scale_by_dadam(
     return base.GradientTransformation(init_fn, update_fn)
 
 
+ScalarOrSchedule = Union[float, jax.Array, base.Schedule]
+
+
 def dadam(
-    learning_rate: alias.ScalarOrSchedule,
+    learning_rate: ScalarOrSchedule,
     b1: float = 0.9,
     b2: float = 0.999,
     eps: float = 1e-8,
