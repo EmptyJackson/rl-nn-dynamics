@@ -66,7 +66,8 @@ def make_train(args):
                     if "achievements" in k.lower()
                 }
             )
-            metric, loss = jax.tree_map(jnp.mean, (metric, loss))
+            # don't take a mean because we want all of the steps
+            # metric, loss = jax.tree_map(jnp.mean, (metric, loss))
 
             runner_state = (
                 train_state,

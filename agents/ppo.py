@@ -5,6 +5,38 @@ from analysis.activations import threshold_grad_second_moment
 from agents.common import construct_minibatches, calculate_gae
 
 
+def compute_tree_norm(tree):
+    return jnp.sqrt(
+        sum(jnp.sum(jnp.square(x)) for x in jax.tree_util.tree_leaves(tree))
+    )
+
+
+def compute_tree_max(tree):
+    return jax.tree_util.tree_reduce(jnp.maximum, jax.tree_map(jnp.max, tree))
+
+
+def compute_tree_mean(tree):
+    tree_sum = sum(jnp.sum(x) for x in jax.tree_util.tree_leaves(tree))
+    tree_elems = sum(jnp.size(x) for x in jax.tree_util.tree_leaves(tree))
+    return tree_sum / tree_elems
+
+
+def compute_tree_std(tree):
+    mean = compute_tree_mean(tree)
+    return jnp.sqrt(
+        sum(jnp.sum(jnp.square(x - mean)) for x in jax.tree_util.tree_leaves(tree))
+    )
+
+
+def compute_tree_cosine_similarity(tree, other_tree):
+    prod_tree = jax.tree_map(jnp.multiply, tree, other_tree)
+    tree_norm = compute_tree_norm(tree)
+    other_tree_norm = compute_tree_norm(other_tree)
+    return sum(jnp.sum(x) for x in jax.tree_util.tree_leaves(prod_tree)) / (
+        tree_norm * other_tree_norm
+    )
+
+
 def make_train_step(args, network):
     def _update_step(train_state, aux_train_states, traj_batch, last_obs, rng):
         def _update_epoch(update_state, _):
@@ -67,10 +99,10 @@ def make_train_step(args, network):
                     train_state.params, traj_batch, advantages, targets
                 )
                 metrics = {
-                    "value_loss": value_loss,
-                    "actor_loss": actor_loss,
-                    "total_loss": total_loss,
-                    "entropy": entropy,
+                    "value_loss": jnp.mean(value_loss),
+                    "actor_loss": jnp.mean(actor_loss),
+                    "total_loss": jnp.mean(total_loss),
+                    "entropy": jnp.mean(entropy),
                 }
                 if args.log_gsm:
                     grad_second_moment = jax.tree_map(jnp.square, grads)
@@ -89,6 +121,21 @@ def make_train_step(args, network):
                         "threshold_grad_second_moment": threshold_gsm,
                     }
                 grads = jax.tree_map(lambda x: x.mean(axis=0), grads)
+                metrics["grad_norm"] = compute_tree_norm(grads)
+                metrics["max_grad"] = compute_tree_max(grads)
+                metrics["grad_std"] = compute_tree_std(grads)
+                update = train_state.tx.update(
+                    grads, train_state.opt_state, train_state.params
+                )[0]
+                metrics["update_norm"] = compute_tree_norm(update)
+                metrics["max_update"] = compute_tree_max(update)
+                metrics["update_std"] = compute_tree_std(update)
+                metrics["m_cosine_similarity"] = compute_tree_cosine_similarity(
+                    grads, train_state.opt_state[1][0].mu
+                )
+                metrics["v_cosine_similarity"] = compute_tree_cosine_similarity(
+                    grads, train_state.opt_state[1][0].nu
+                )
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, metrics
 

@@ -32,8 +32,8 @@ def log_results(args, results):
     # Hack to avoid logging 0 before first episodes are done
     # Required until https://github.com/RobertTLange/gymnax/issues/62 is resolved
     returned = results["metrics"]["returned_episode"]
-    num_agents, num_train_iters = returned.shape
-    """ REMOVED, MEAN TAKEN
+    # num_agents, num_updates, num_envs, num_steps = returned.shape
+    # num_train_iters = num_updates * num_envs * num_steps
     num_agents, num_train_iters, num_env_workers, num_rollout_steps = returned.shape
     first_episode_done = jnp.zeros((num_agents, num_env_workers), dtype=jnp.bool_)
     all_done_step = 0
@@ -41,9 +41,9 @@ def log_results(args, results):
         step_episodes_done = jnp.any(returned[:, all_done_step], axis=-1)
         first_episode_done |= step_episodes_done
         all_done_step += 1
-    """
-    all_done_step = 0
-    return_list = [*rets[:, all_done_step:num_train_iters].mean(axis=0)]
+    return_list = [
+        rets[:, step].mean() for step in range(all_done_step, num_train_iters)
+    ]
 
     if args.log:
         if num_steps > MAX_LOG_STEPS:
@@ -52,18 +52,30 @@ def log_results(args, results):
             )
         else:
             steps = jnp.arange(num_steps)
+        updates_per_step = args.num_minibatches * args.ppo_num_epochs
+        flat_results = {}
+        for k, v in results["loss"].items():
+            flat_results[k] = v.reshape(num_agents, -1)
+        results["loss"] = flat_results
         for step in steps:
             step_ret = None
             if step >= all_done_step:
                 step_ret = return_list[step - all_done_step]
+            for update in range(updates_per_step):
+                total_updates = step * updates_per_step + update
+                update_log_dict = {
+                    "update": total_updates,
+                    **{
+                        k: v[:, total_updates].mean()
+                        for k, v in results["loss"].items()
+                        if k
+                        not in {"grad_second_moment", "threshold_grad_second_moment"}
+                    },
+                }
+                wandb.log(update_log_dict)
             log_dict = {
                 "return": step_ret,
                 "step": step,
-                **{
-                    k: v[:, step].mean()
-                    for k, v in results["loss"].items()
-                    if k not in {"grad_second_moment", "threshold_grad_second_moment"}
-                },
                 # Log achievements (Craftax) and score if present in info
                 **{
                     k: v[:, step].mean()
