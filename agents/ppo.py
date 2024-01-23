@@ -17,14 +17,19 @@ def compute_tree_max(tree):
 
 def compute_tree_mean(tree):
     tree_sum = sum(jnp.sum(x) for x in jax.tree_util.tree_leaves(tree))
-    tree_elems = sum(jnp.size(x) for x in jax.tree_util.tree_leaves(tree))
+    tree_elems = compute_tree_num_elems(tree)
     return tree_sum / tree_elems
+
+
+def compute_tree_num_elems(tree):
+    return sum(jnp.size(x) for x in jax.tree_util.tree_leaves(tree))
 
 
 def compute_tree_std(tree):
     mean = compute_tree_mean(tree)
     return jnp.sqrt(
         sum(jnp.sum(jnp.square(x - mean)) for x in jax.tree_util.tree_leaves(tree))
+        / compute_tree_num_elems(tree)
     )
 
 
@@ -134,7 +139,7 @@ def make_train_step(args, network):
                     grads, train_state.opt_state[1][0].mu
                 )
                 metrics["v_cosine_similarity"] = compute_tree_cosine_similarity(
-                    grads, train_state.opt_state[1][0].nu
+                    grads**2, train_state.opt_state[1][0].nu
                 )
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, metrics
