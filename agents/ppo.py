@@ -139,7 +139,7 @@ def make_train_step(args, network):
                     grads, train_state.opt_state[1][0].mu
                 )
                 metrics["v_cosine_similarity"] = compute_tree_cosine_similarity(
-                    grads**2, train_state.opt_state[1][0].nu
+                    jax.tree_map(jnp.square, grads), train_state.opt_state[1][0].nu
                 )
                 train_state = train_state.apply_gradients(grads=grads)
                 return train_state, metrics
