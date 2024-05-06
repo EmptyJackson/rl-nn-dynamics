@@ -11,6 +11,10 @@ def compute_tree_norm(tree):
     )
 
 
+def compute_tree_histogram(tree):
+    return jnp.histogram(jax.tree_util.tree_flatten(tree), bins=128)
+
+
 def compute_tree_max(tree):
     return jax.tree_util.tree_reduce(jnp.maximum, jax.tree_map(jnp.max, tree))
 
@@ -138,6 +142,8 @@ def make_train_step(args, network):
                 metrics["m_cosine_similarity"] = compute_tree_cosine_similarity(
                     grads, train_state.opt_state[1][0].mu
                 )
+                metrics["grad_histogram"] = compute_tree_histogram(grads)
+                metrics["update_histogram"] = compute_tree_histogram(update)
                 metrics["v_cosine_similarity"] = compute_tree_cosine_similarity(
                     jax.tree_map(jnp.square, grads), train_state.opt_state[1][0].nu
                 )
