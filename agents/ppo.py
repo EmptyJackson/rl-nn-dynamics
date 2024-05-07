@@ -1,3 +1,4 @@
+from functools import partial
 import jax
 import jax.numpy as jnp
 
@@ -12,7 +13,7 @@ def compute_tree_norm(tree):
 
 
 def compute_tree_histogram(tree):
-    return jnp.histogram(jax.tree_util.tree_flatten(tree), bins=128)
+    return jax.tree_map(partial(jnp.histogram, bins=32), tree)
 
 
 def compute_tree_max(tree):

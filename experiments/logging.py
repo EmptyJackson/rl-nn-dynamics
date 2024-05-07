@@ -70,9 +70,15 @@ def log_results(args, results):
                         for k, v in results["loss"].items()
                         if k
                         not in {"grad_second_moment", "threshold_grad_second_moment"}
+                        and "histogram" not in k
                     },
                 }
-                wandb.log(update_log_dict)
+                histogram_dict = {
+                    k: jax.tree_map(wandb.Histogram, v[:, total_updates])
+                    for k, v in results["loss"].items()
+                    if "histogram" in k
+                }
+                wandb.log({**update_log_dict, **histogram_dict})
             log_dict = {
                 "return": step_ret,
                 "step": step,
