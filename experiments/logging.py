@@ -55,7 +55,10 @@ def log_results(args, results):
         updates_per_step = args.num_minibatches * args.ppo_num_epochs
         flat_results = {}
         for k, v in results["loss"].items():
-            flat_results[k] = v.reshape(num_agents, -1)
+            if "histogram" not in k:
+                flat_results[k] = v.reshape(num_agents, -1)
+            else:
+                flat_results[k] = v
         results["loss"] = flat_results
         for step in steps:
             step_ret = None
@@ -74,7 +77,7 @@ def log_results(args, results):
                     },
                 }
                 histogram_dict = {
-                    k: jax.tree_map(wandb.Histogram, v[:, total_updates])
+                    k: jax.tree_map(lambda x: wandb.Histogram(np_histogram=x), jax.tree_map(lambda x: x[:, total_updates].squeeze(), v), is_leaf=lambda x: isinstance(x, tuple))
                     for k, v in results["loss"].items()
                     if "histogram" in k
                 }
