@@ -58,7 +58,7 @@ def log_results(args, results):
             if "histogram" not in k:
                 flat_results[k] = v.reshape(num_agents, -1)
             else:
-                flat_results[k] = v
+                flat_results[k] = jax.tree_map(lambda x: x.reshape(num_agents, -1, x.shape[-1]), v)
         results["loss"] = flat_results
         for step in steps:
             step_ret = None
